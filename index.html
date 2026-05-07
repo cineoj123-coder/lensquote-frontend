@@ -397,21 +397,7 @@ function showView(name) {
 }
 
 // ── Init ────────────────────────────────────────────────────
-async function init() {
-  // Check if API URL is configured
-  if (!API_BASE_URL || API_BASE_URL === "YOUR_KOYEB_URL_HERE") {
-    document.getElementById('config-banner').classList.remove('hidden');
-    // Use fallback offline prices
-    prices = { traditional_photography:5000, traditional_videography:5000, candid_photography:8000, cinematic_video:10000, drone_shoot:4000 };
-  } else {
-    await loadPrices();
-  }
-  addEvent();
-  if (adminToken) {
-    showView('admin');
-    loadAdminPrices();
-  }
-}
+
 
 function setApiUrl() {
   const val = document.getElementById('api-url-input').value.trim();
