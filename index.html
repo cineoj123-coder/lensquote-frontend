@@ -418,10 +418,20 @@ async function loadPrices() {
     const res = await api('/api/prices');
     prices = await res.json();
   } catch(e) {
-    prices = { traditional_photography:5000, traditional_videography:5000, candid_photography:8000, cinematic_video:10000, drone_shoot:4000 };
+    prices = { traditional_photography:5000, traditional_videography:7000, candid_photography:8000, cinematic_video:11000, drone_shoot:6000 };
   }
 }
 
+async function init() {
+  await loadPrices();
+  addEvent();
+
+  if (adminToken) {
+    showView('admin');
+    loadAdminPrices();
+  }
+}
+  
 // ── Events ──────────────────────────────────────────────────
 function addEvent() {
   eventCount++;
