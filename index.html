@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LensQuote — Photographer Quotation System</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    :root {
+      --cream:#FAF7F2;--warm:#F2EDE4;--gold:#C9A84C;--gold-lt:#E8D5A3;
+      --dark:#1A1612;--charcoal:#3D3530;--muted:#8A7F76;--border:#E0D8CE;
+      --white:#FFFFFF;--danger:#C0392B;--success:#27AE60;
+      --font-display:'Cormorant Garamond',Georgia,serif;
+      --font-body:'DM Sans',system-ui,sans-serif;
+      --radius:12px;--shadow:0 4px 24px rgba(26,22,18,.08);
+      --shadow-lg:0 8px 40px rgba(26,22,18,.14);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--font-body);background:var(--cream);color:var(--dark);min-height:100vh;font-size:15px;line-height:1.6}
+
+    .view{display:none}.view.active{display:block}
+
+    /* HEADER */
+    header{background:var(--dark);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:64px;position:sticky;top:0;z-index:100}
+    .logo{font-family:var(--font-display);font-size:1.7rem;font-weight:300;color:var(--white);letter-spacing:.02em}
+    .logo span{color:var(--gold);font-style:italic}
+    .header-nav{display:flex;gap:8px;align-items:center}
+    .header-nav a{color:var(--gold-lt);text-decoration:none;font-size:.82rem;font-weight:500;letter-spacing:.06em;text-transform:uppercase;padding:6px 14px;border-radius:6px;transition:all .2s;cursor:pointer}
+    .header-nav a:hover{background:rgba(201,168,76,.15);color:var(--gold)}
+
+    /* HERO */
+    .hero{background:linear-gradient(135deg,var(--dark) 0%,#2D2520 60%,#3D3025 100%);padding:72px 24px 80px;text-align:center;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23C9A84C' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+    .hero-content{position:relative;z-index:1;max-width:680px;margin:0 auto}
+    .hero h1{font-family:var(--font-display);font-size:clamp(2.4rem,6vw,3.8rem);font-weight:300;color:var(--white);line-height:1.15;margin-bottom:16px}
+    .hero h1 em{color:var(--gold);font-style:italic}
+    .hero p{color:var(--gold-lt);font-size:1rem;font-weight:300;opacity:.85;margin-bottom:36px}
+
+    /* BUTTONS */
+    .btn{display:inline-flex;align-items:center;gap:8px;padding:13px 28px;border-radius:var(--radius);font-family:var(--font-body);font-size:.9rem;font-weight:600;letter-spacing:.04em;cursor:pointer;border:none;transition:all .2s ease;text-decoration:none}
+    .btn-gold{background:var(--gold);color:var(--dark)}.btn-gold:hover{background:#B8963E;transform:translateY(-1px);box-shadow:0 6px 20px rgba(201,168,76,.35)}
+    .btn-outline{background:transparent;border:1.5px solid var(--gold);color:var(--gold)}.btn-outline:hover{background:rgba(201,168,76,.1)}
+    .btn-dark{background:var(--dark);color:var(--white)}.btn-dark:hover{background:var(--charcoal)}
+    .btn-danger{background:var(--danger);color:#fff}.btn-danger:hover{background:#A93226}
+    .btn-wa{background:#25D366;color:#fff}.btn-wa:hover{background:#1ebe5c;transform:translateY(-1px)}
+    .btn-sm{padding:8px 16px;font-size:.82rem}
+    .btn-full{width:100%;justify-content:center}
+
+    /* LAYOUT */
+    .container{max-width:820px;margin:0 auto;padding:0 20px}
+    .container-lg{max-width:1100px;margin:0 auto;padding:0 20px}
+    .section{padding:48px 0}
+
+    /* CARD */
+    .card{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--border)}
+    .card-header{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+    .card-header h2{font-family:var(--font-display);font-size:1.4rem;font-weight:400;color:var(--dark)}
+    .card-header h2 small{font-size:.8rem;font-family:var(--font-body);color:var(--muted);font-weight:400;display:block}
+    .card-body{padding:24px}
+
+    /* FORM */
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media(max-width:560px){.form-grid{grid-template-columns:1fr}}
+    .form-group{display:flex;flex-direction:column;gap:6px}
+    .form-group.full{grid-column:1/-1}
+    label{font-size:.78rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--charcoal)}
+    input[type=text],input[type=tel],input[type=date],input[type=time],input[type=number],input[type=password],select{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;font-family:var(--font-body);font-size:.93rem;color:var(--dark);background:var(--cream);transition:border-color .2s,box-shadow .2s;outline:none}
+    input:focus,select:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(201,168,76,.15);background:var(--white)}
+
+    /* CHECKBOXES */
+    .checkbox-group{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+    .checkbox-item{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;transition:all .15s;user-select:none}
+    .checkbox-item:hover{border-color:var(--gold-lt);background:var(--warm)}
+    .checkbox-item input[type=checkbox]{accent-color:var(--gold);width:16px;height:16px}
+    .checkbox-item.checked{border-color:var(--gold);background:#FFF9EE}
+    .checkbox-item span{font-size:.86rem;font-weight:500}
+
+    /* EVENTS */
+    .events-list{display:flex;flex-direction:column;gap:16px}
+    .event-block{border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .2s}
+    .event-block:hover{border-color:var(--gold-lt)}
+    .event-block-header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:var(--warm);border-bottom:1px solid var(--border)}
+    .event-block-header strong{font-size:.85rem;font-weight:600;color:var(--charcoal);letter-spacing:.04em}
+    .event-block-body{padding:16px 18px;display:flex;flex-direction:column;gap:14px}
+    .add-event-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border:2px dashed var(--border);border-radius:var(--radius);background:transparent;color:var(--muted);font-family:var(--font-body);font-size:.9rem;font-weight:500;cursor:pointer;width:100%;transition:all .2s}
+    .add-event-btn:hover{border-color:var(--gold);color:var(--gold);background:#FFF9EE}
+
+    /* STEPS */
+    .steps{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:32px}
+    .step{display:flex;align-items:center;gap:8px;font-size:.82rem;font-weight:600;color:var(--muted)}
+    .step-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--border);color:var(--muted);font-size:.78rem;font-weight:700;transition:all .3s}
+    .step.active .step-num{background:var(--gold);color:var(--dark)}.step.active{color:var(--dark)}
+    .step.done .step-num{background:var(--success);color:#fff}
+    .step-line{width:40px;height:2px;background:var(--border);margin:0 4px}
+
+    /* QUOTATION */
+    #quotation-view{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-lg);border:1px solid var(--border);overflow:hidden;max-width:720px;margin:0 auto}
+    .quot-header{background:var(--dark);padding:32px;text-align:center}
+    .quot-header h2{font-family:var(--font-display);font-size:2rem;font-weight:300;color:var(--white);margin-bottom:4px}
+    .quot-header p{color:var(--gold-lt);font-size:.85rem;opacity:.7}
+    .quot-id{display:inline-block;margin-top:12px;background:rgba(201,168,76,.2);border:1px solid var(--gold);border-radius:20px;padding:4px 16px;color:var(--gold);font-size:.8rem;font-weight:600;letter-spacing:.1em}
+    .quot-body{padding:28px 32px}
+    .quot-client{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+    @media(max-width:560px){.quot-client{grid-template-columns:1fr 1fr}}
+    .quot-client-item label{color:var(--muted);font-size:.72rem;display:block;margin-bottom:4px}
+    .quot-client-item span{font-weight:600;font-size:.95rem}
+    .quot-events{display:flex;flex-direction:column;gap:16px;margin-bottom:24px}
+    .quot-event{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+    .quot-event-head{background:var(--warm);padding:12px 18px;display:flex;justify-content:space-between;align-items:center}
+    .quot-event-head strong{font-weight:700}
+    .quot-event-head span{font-size:.82rem;color:var(--muted)}
+    .quot-event-body{padding:14px 18px}
+    .service-line{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px dashed var(--border);font-size:.9rem}
+    .service-line:last-child{border:none}
+    .service-line span:last-child{font-weight:600;color:var(--charcoal)}
+    .quot-total{background:var(--dark);padding:20px 32px;display:flex;justify-content:space-between;align-items:center}
+    .quot-total span{color:var(--gold-lt);font-size:.9rem}
+    .quot-total strong{font-family:var(--font-display);font-size:2rem;font-weight:400;color:var(--gold)}
+    .quot-actions{padding:20px 32px;display:flex;gap:12px;flex-wrap:wrap}
+
+    /* ADMIN */
+    .admin-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:28px}
+    .admin-tab{padding:9px 20px;border-radius:8px;border:1.5px solid var(--border);background:var(--white);color:var(--charcoal);font-family:var(--font-body);font-size:.85rem;font-weight:600;cursor:pointer;transition:all .15s}
+    .admin-tab.active{background:var(--dark);color:var(--white);border-color:var(--dark)}
+    .admin-tab:hover:not(.active){border-color:var(--gold);color:var(--gold)}
+    .price-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    @media(max-width:560px){.price-grid{grid-template-columns:1fr}}
+    .price-item{padding:16px;border:1.5px solid var(--border);border-radius:10px;background:var(--cream)}
+    .price-item label{display:block;margin-bottom:8px}
+    .price-note{font-size:.76rem;color:var(--muted);margin-top:6px;font-weight:400;text-transform:none;letter-spacing:0}
+    .quot-table{width:100%;border-collapse:collapse;font-size:.88rem}
+    .quot-table th{text-align:left;padding:10px 14px;background:var(--warm);font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;color:var(--charcoal);border-bottom:1px solid var(--border)}
+    .quot-table td{padding:12px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+    .quot-table tr:last-child td{border:none}
+    .quot-table tr:hover td{background:var(--warm)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.74rem;font-weight:600;background:#EEF9F2;color:var(--success)}
+
+    /* LOGIN */
+    .login-wrap{min-height:80vh;display:flex;align-items:center;justify-content:center;padding:32px 20px}
+    .login-box{background:var(--white);border-radius:var(--radius);box-shadow:var(--shadow-lg);border:1px solid var(--border);width:100%;max-width:400px;overflow:hidden}
+    .login-box-header{background:var(--dark);padding:28px;text-align:center}
+    .login-box-header h2{font-family:var(--font-display);font-size:1.7rem;font-weight:300;color:var(--white)}
+    .login-box-header p{color:var(--gold-lt);font-size:.84rem;opacity:.7;margin-top:6px}
+    .login-box-body{padding:28px;display:flex;flex-direction:column;gap:16px}
+
+    /* API CONFIG BANNER */
+    .config-banner{background:#FFF3CD;border:1.5px solid #FFC107;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:.88rem;line-height:1.6}
+    .config-banner strong{color:#856404}
+    .config-banner code{background:#FFE69C;padding:2px 6px;border-radius:4px;font-family:monospace;font-size:.83rem}
+
+    /* ALERTS */
+    .alert{padding:12px 16px;border-radius:8px;font-size:.88rem;font-weight:500}
+    .alert-error{background:#FDF0EF;color:var(--danger);border:1px solid #F5C6C3}
+    .alert-success{background:#EEF9F2;color:var(--success);border:1px solid #C3E8D0}
+
+    /* SPINNER */
+    .spinner{display:inline-block;width:18px;height:18px;border:2px solid rgba(255,255,255,.4);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    /* UTILITY */
+    .text-muted{color:var(--muted)}.text-gold{color:var(--gold)}.text-center{text-align:center}
+    .mt-4{margin-top:16px}.mt-6{margin-top:24px}.mb-4{margin-bottom:16px}
+    .flex{display:flex}.flex-wrap{flex-wrap:wrap}.gap-3{gap:12px}.gap-2{gap:8px}
+    .items-center{align-items:center}.justify-between{justify-content:space-between}
+    .hidden{display:none!important}.overflow-x{overflow-x:auto}
+    @media(max-width:640px){.card-body{padding:18px}.quot-body{padding:20px}.quot-actions{padding:16px 20px}.quot-total{padding:16px 20px}}
+  </style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════
+     HEADER
+════════════════════════════════════ -->
+<header>
+  <div class="logo">Lens<span>Quote</span></div>
+  <nav class="header-nav">
+    <a onclick="showView('client')">Get Quote</a>
+    <a onclick="showView('admin-login')">Admin</a>
+  </nav>
+</header>
+
+<!-- ════════════════════════════════════
+     CLIENT VIEW
+════════════════════════════════════ -->
+<div id="view-client" class="view active">
+  <div class="hero">
+    <div class="hero-content">
+      <h1>Beautiful Moments,<br/><em>Beautifully Priced</em></h1>
+      <p>Fill in your event details and get an instant photography quotation.</p>
+      <a class="btn btn-gold" onclick="document.getElementById('form-section').scrollIntoView({behavior:'smooth'})">
+        📷 Get My Quote
+      </a>
+    </div>
+  </div>
+
+  <div id="form-section" class="container section">
+    <!-- Config banner (shown until API URL is set) -->
+    <div id="config-banner" class="config-banner hidden">
+      ⚙️ <strong>Setup needed:</strong> Open <code>index.html</code> and set <code>API_BASE_URL</code>
+      to your Koyeb backend URL. <a href="#" onclick="document.getElementById('api-url-input').focus();return false">Click here to set it now →</a>
+      <br/><br/>
+      <label style="font-size:.82rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#856404;">Backend API URL</label>
+      <div style="display:flex;gap:8px;margin-top:6px;">
+        <input type="text" id="api-url-input" placeholder="https://your-app.koyeb.app" style="flex:1;padding:8px 12px;border:1.5px solid #FFC107;border-radius:6px;font-size:.9rem;background:#FFFDF0" />
+        <button class="btn btn-dark btn-sm" onclick="setApiUrl()">Save</button>
+      </div>
+    </div>
+
+    <div class="steps">
+      <div class="step active" id="step1"><div class="step-num">1</div><span>Your Details</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="step2"><div class="step-num">2</div><span>Events</span></div>
+      <div class="step-line"></div>
+      <div class="step" id="step3"><div class="step-num">3</div><span>Quotation</span></div>
+    </div>
+
+    <div id="form-alert" class="hidden mb-4"></div>
+
+    <div id="form-step1" class="card mb-4">
+      <div class="card-header">
+        <h2>Your Details <small>Tell us about yourself</small></h2>
+      </div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="client-name">Client Name *</label>
+            <input type="text" id="client-name" placeholder="e.g. Priya Sharma" />
+          </div>
+          <div class="form-group">
+            <label for="client-mobile">Mobile Number *</label>
+            <input type="tel" id="client-mobile" placeholder="e.g. 9876543210" />
+          </div>
+          <div class="form-group full">
+            <label for="client-location">Wedding / Event Location *</label>
+            <input type="text" id="client-location" placeholder="e.g. Nagpur, Maharashtra" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="form-step2" class="card mb-4">
+      <div class="card-header">
+        <h2>Events <small>Add all events you want covered</small></h2>
+        <button class="btn btn-outline btn-sm" onclick="addEvent()">+ Add Event</button>
+      </div>
+      <div class="card-body">
+        <div class="events-list" id="events-list"></div>
+        <button class="add-event-btn mt-4" onclick="addEvent()">➕ Add Another Event</button>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap gap-3 justify-between items-center">
+      <p class="text-muted" style="font-size:.82rem;">* All fields required. Each event is priced per day with 100% markup.</p>
+      <button class="btn btn-gold" onclick="generateQuotation()" id="submit-btn">Generate Quotation →</button>
+    </div>
+  </div>
+
+  <div id="quotation-section" class="container section hidden">
+    <div id="quotation-view"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     ADMIN LOGIN VIEW
+════════════════════════════════════ -->
+<div id="view-admin-login" class="view">
+  <div class="login-wrap">
+    <div class="login-box">
+      <div class="login-box-header">
+        <h2>Admin Panel</h2>
+        <p>Manage pricing &amp; quotations</p>
+      </div>
+      <div class="login-box-body">
+        <div id="login-alert" class="hidden"></div>
+        <div class="form-group">
+          <label for="admin-user">Username</label>
+          <input type="text" id="admin-user" placeholder="admin" />
+        </div>
+        <div class="form-group">
+          <label for="admin-pass">Password</label>
+          <input type="password" id="admin-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')adminLogin()" />
+        </div>
+        <button class="btn btn-dark btn-full" onclick="adminLogin()" id="login-btn">Sign In →</button>
+        <p class="text-center text-muted" style="font-size:.78rem;">Default: admin / photo@admin123</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     ADMIN DASHBOARD VIEW
+════════════════════════════════════ -->
+<div id="view-admin" class="view">
+  <div class="container-lg section">
+    <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
+      <div>
+        <h1 style="font-family:var(--font-display);font-size:2rem;font-weight:300;">Admin Dashboard</h1>
+        <p class="text-muted" style="font-size:.85rem;">Manage pricing and view quotations</p>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="adminLogout()">Sign Out</button>
+    </div>
+
+    <div class="admin-nav">
+      <button class="admin-tab active" onclick="adminTab('prices',this)">💰 Pricing</button>
+      <button class="admin-tab" onclick="adminTab('quotations',this)">📋 Quotations</button>
+    </div>
+
+    <div id="admin-tab-prices">
+      <div class="card">
+        <div class="card-header">
+          <h2>Service Pricing <small>Base prices — client is charged 2× (100% markup)</small></h2>
+          <button class="btn btn-gold btn-sm" onclick="savePrices()" id="save-prices-btn">Save Prices</button>
+        </div>
+        <div class="card-body">
+          <div id="prices-alert" class="hidden mb-4"></div>
+          <div class="price-grid" id="price-grid">
+            <p class="text-muted">Loading prices...</p>
+          </div>
+          <div class="mt-6" style="background:var(--warm);border-radius:8px;padding:14px 18px;font-size:.84rem;color:var(--charcoal);">
+            💡 <strong>Example:</strong> Set base ₹5,000 → client sees ₹10,000 per day per event.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="admin-tab-quotations" class="hidden">
+      <div class="card">
+        <div class="card-header">
+          <h2>Past Quotations</h2>
+          <button class="btn btn-outline btn-sm" onclick="loadQuotations()">↻ Refresh</button>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div class="overflow-x">
+            <table class="quot-table">
+              <thead>
+                <tr>
+                  <th>ID</th><th>Client</th><th>Mobile</th><th>Location</th><th>Events</th><th>Total</th><th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="quotations-tbody">
+                <tr><td colspan="7" class="text-center text-muted" style="padding:28px;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════ -->
+<script>
+// ══════════════════════════════════════════════════════════
+//  ⚙️  CONFIGURATION — SET YOUR BACKEND URL HERE
+//  After deploying to Koyeb, paste your URL below
+//  Example: "https://lensquote-abc123.koyeb.app"
+// ══════════════════════════════════════════════════════════
+let API_BASE_URL = localStorage.getItem('apiUrl') || "YOUR_KOYEB_URL_HERE";
+
+// Your WhatsApp number (country code + number, no + or spaces)
+// India example: 919876543210
+const ADMIN_PHONE = "919876543210";
+
+// ══════════════════════════════════════════════════════════
+
+const SERVICES = [
+  { id:'traditional_photography', label:'Traditional Photography' },
+  { id:'traditional_videography', label:'Traditional Videography' },
+  { id:'candid_photography',      label:'Candid Photography' },
+  { id:'cinematic_video',         label:'Cinematic Video' },
+  { id:'drone_shoot',             label:'Drone Shoot' },
+];
+
+const SERVICE_LABELS = Object.fromEntries(SERVICES.map(s => [s.id, s.label]));
+
+let eventCount = 0;
+let prices = {};
+let adminToken = localStorage.getItem('adminToken') || null;
+let currentQuotationData = null;
+
+// ── API helper ──────────────────────────────────────────────
+async function api(path, options = {}) {
+  const url = API_BASE_URL.replace(/\/$/, '') + path;
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(adminToken ? { 'x-admin-token': adminToken } : {}),
+      ...(options.headers || {}),
+    }
+  });
+  return res;
+}
+
+// ── View routing ────────────────────────────────────────────
+function showView(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(`view-${name}`).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// ── Init ────────────────────────────────────────────────────
+async function init() {
+  // Check if API URL is configured
+  if (!API_BASE_URL || API_BASE_URL === "YOUR_KOYEB_URL_HERE") {
+    document.getElementById('config-banner').classList.remove('hidden');
+    // Use fallback offline prices
+    prices = { traditional_photography:5000, traditional_videography:5000, candid_photography:8000, cinematic_video:10000, drone_shoot:4000 };
+  } else {
+    await loadPrices();
+  }
+  addEvent();
+  if (adminToken) {
+    showView('admin');
+    loadAdminPrices();
+  }
+}
+
+function setApiUrl() {
+  const val = document.getElementById('api-url-input').value.trim();
+  if (!val || !val.startsWith('http')) {
+    alert('Please enter a valid URL starting with https://');
+    return;
+  }
+  API_BASE_URL = val;
+  localStorage.setItem('apiUrl', val);
+  document.getElementById('config-banner').classList.add('hidden');
+  loadPrices();
+  alert('✅ API URL saved! The app will now use your backend.');
+}
+
+// ── Prices ──────────────────────────────────────────────────
+async function loadPrices() {
+  try {
+    const res = await api('/api/prices');
+    prices = await res.json();
+  } catch(e) {
+    prices = { traditional_photography:5000, traditional_videography:5000, candid_photography:8000, cinematic_video:10000, drone_shoot:4000 };
+  }
+}
+
+// ── Events ──────────────────────────────────────────────────
+function addEvent() {
+  eventCount++;
+  const id = eventCount;
+  const wrap = document.getElementById('events-list');
+  const block = document.createElement('div');
+  block.className = 'event-block';
+  block.id = `event-block-${id}`;
+  block.innerHTML = `
+    <div class="event-block-header">
+      <strong>Event #${id}</strong>
+      ${id > 1 ? `<button class="btn btn-danger btn-sm" onclick="removeEvent(${id})">Remove</button>` : '<span></span>'}
+    </div>
+    <div class="event-block-body">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Event Name *</label>
+          <input type="text" id="event-name-${id}" placeholder="e.g. Haldi, Wedding, Reception" />
+        </div>
+        <div class="form-group">
+          <label>Date *</label>
+          <input type="date" id="event-date-${id}" />
+        </div>
+        <div class="form-group">
+          <label>Time *</label>
+          <input type="time" id="event-time-${id}" />
+        </div>
+      </div>
+      <div>
+        <label style="display:block;margin-bottom:10px;">Services Required *</label>
+        <div class="checkbox-group">
+          ${SERVICES.map(s => `
+            <label class="checkbox-item" onclick="toggleCheck(this)">
+              <input type="checkbox" value="${s.id}" />
+              <span>${s.label}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    </div>`;
+  wrap.appendChild(block);
+}
+
+function removeEvent(id) {
+  const el = document.getElementById(`event-block-${id}`);
+  if (el) el.remove();
+}
+
+function toggleCheck(label) {
+  const chk = label.querySelector('input[type="checkbox"]');
+  chk.checked = !chk.checked;
+  label.classList.toggle('checked', chk.checked);
+}
+
+// ── Generate Quotation ──────────────────────────────────────
+async function generateQuotation() {
+  hideAlert('form-alert');
+  const clientName = document.getElementById('client-name').value.trim();
+  const mobile     = document.getElementById('client-mobile').value.trim();
+  const location   = document.getElementById('client-location').value.trim();
+
+  if (!clientName || !mobile || !location) {
+    showAlert('form-alert','Please fill in all client details.','error');
+    document.getElementById('form-section').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+
+  const eventBlocks = document.querySelectorAll('.event-block');
+  if (!eventBlocks.length) { showAlert('form-alert','Add at least one event.','error'); return; }
+
+  const events = [];
+  let valid = true;
+
+  eventBlocks.forEach((block, idx) => {
+    const id   = block.id.replace('event-block-','');
+    const name = document.getElementById(`event-name-${id}`).value.trim();
+    const date = document.getElementById(`event-date-${id}`).value;
+    const time = document.getElementById(`event-time-${id}`).value;
+    const selected = [...block.querySelectorAll('input[type="checkbox"]:checked')].map(c=>c.value);
+    if (!name||!date||!time||!selected.length) {
+      showAlert('form-alert',`Event #${idx+1}: Fill all fields and pick at least one service.`,'error');
+      valid=false; return;
+    }
+    events.push({name,date,time,services:selected});
+  });
+
+  if (!valid) return;
+
+  // Calculate
+  let totalCost = 0;
+  const breakdown = events.map(ev => {
+    const servicesBreakdown = ev.services.map(sid => {
+      const basePrice  = prices[sid] || 0;
+      const finalPrice = basePrice * 2; // 100% markup
+      return { id:sid, label:SERVICE_LABELS[sid]||sid, basePrice, finalPrice };
+    });
+    const eventTotal = servicesBreakdown.reduce((s,x)=>s+x.finalPrice,0);
+    totalCost += eventTotal;
+    return { ...ev, servicesBreakdown, eventTotal };
+  });
+
+  // Save to backend
+  let quotationId = `QT-LOCAL-${Date.now()}`;
+  try {
+    const res = await api('/api/quotation',{
+      method:'POST',
+      body: JSON.stringify({ clientName, mobile, location, events, services:breakdown, totalCost })
+    });
+    if (res.ok) { const d = await res.json(); quotationId = d.id; }
+  } catch(e) { /* offline */ }
+
+  currentQuotationData = { clientName, mobile, location, events, breakdown, totalCost, quotationId };
+  renderQuotation(currentQuotationData);
+
+  document.getElementById('step2').classList.add('done','active');
+  document.getElementById('step3').classList.add('active');
+}
+
+// ── Render Quotation ────────────────────────────────────────
+function renderQuotation({ clientName, mobile, location, breakdown, totalCost, quotationId }) {
+  const dateStr = new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+  const eventsHtml = breakdown.map(ev=>`
+    <div class="quot-event">
+      <div class="quot-event-head">
+        <strong>${ev.name}</strong>
+        <span>${formatDate(ev.date)} &nbsp;|&nbsp; ${formatTime(ev.time)}</span>
+      </div>
+      <div class="quot-event-body">
+        ${ev.servicesBreakdown.map(s=>`
+          <div class="service-line"><span>${s.label}</span><span>₹${s.finalPrice.toLocaleString('en-IN')}</span></div>
+        `).join('')}
+        <div class="service-line" style="font-weight:700;padding-top:10px;border-top:1px solid var(--border);margin-top:6px;">
+          <span>Subtotal</span><span>₹${ev.eventTotal.toLocaleString('en-IN')}</span>
+        </div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('quotation-view').innerHTML = `
+    <div class="quot-header">
+      <h2>Photography Quotation</h2>
+      <p>Generated on ${dateStr}</p>
+      <div class="quot-id">${quotationId}</div>
+    </div>
+    <div class="quot-body">
+      <div class="quot-client">
+        <div class="quot-client-item"><label>CLIENT NAME</label><span>${clientName}</span></div>
+        <div class="quot-client-item"><label>MOBILE</label><span>${mobile}</span></div>
+        <div class="quot-client-item"><label>LOCATION</label><span>${location}</span></div>
+      </div>
+      <div class="quot-events">${eventsHtml}</div>
+    </div>
+    <div class="quot-total">
+      <span>Grand Total</span>
+      <strong>₹${totalCost.toLocaleString('en-IN')}</strong>
+    </div>
+    <div class="quot-actions">
+      <button class="btn btn-dark" onclick="downloadPDF()">⬇ Download PDF</button>
+      <button class="btn btn-wa" onclick="sendWhatsApp()">📲 Send via WhatsApp</button>
+      <button class="btn btn-outline" onclick="resetForm()">✕ New Quote</button>
+    </div>`;
+
+  const sec = document.getElementById('quotation-section');
+  sec.classList.remove('hidden');
+  sec.scrollIntoView({behavior:'smooth'});
+}
+
+// ── PDF ─────────────────────────────────────────────────────
+function downloadPDF() {
+  if (!currentQuotationData) return;
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const { clientName, mobile, location, breakdown, totalCost, quotationId } = currentQuotationData;
+  const pageW = doc.internal.pageSize.getWidth();
+  let y = 0;
+
+  doc.setFillColor(26,22,18); doc.rect(0,0,pageW,40,'F');
+  doc.setTextColor(255,255,255); doc.setFontSize(22); doc.setFont('helvetica','bold');
+  doc.text('LensQuote',15,18);
+  doc.setFontSize(10); doc.setFont('helvetica','normal');
+  doc.setTextColor(201,168,76); doc.text('PHOTOGRAPHY QUOTATION',15,27);
+  doc.setTextColor(200,200,200);
+  doc.text(`ID: ${quotationId}`,15,34);
+  doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`,pageW-15,34,{align:'right'});
+  y=52;
+
+  doc.setFillColor(242,237,228); doc.roundedRect(14,y-6,pageW-28,28,3,3,'F');
+  doc.setTextColor(60,53,48); doc.setFontSize(8); doc.setFont('helvetica','bold');
+  doc.text('CLIENT NAME',20,y+2); doc.text('MOBILE',85,y+2); doc.text('LOCATION',140,y+2);
+  doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(26,22,18);
+  doc.text(clientName,20,y+10); doc.text(mobile,85,y+10); doc.text(location.substring(0,28),140,y+10);
+  y+=36;
+
+  breakdown.forEach(ev=>{
+    if(y>250){doc.addPage();y=20;}
+    doc.setFillColor(26,22,18); doc.roundedRect(14,y,pageW-28,10,2,2,'F');
+    doc.setTextColor(255,255,255); doc.setFontSize(9); doc.setFont('helvetica','bold');
+    doc.text(ev.name.toUpperCase(),20,y+6.5);
+    doc.setFont('helvetica','normal'); doc.setTextColor(201,168,76);
+    doc.text(`${formatDate(ev.date)}  |  ${formatTime(ev.time)}`,pageW-20,y+6.5,{align:'right'});
+    y+=14;
+    ev.servicesBreakdown.forEach(s=>{
+      doc.setTextColor(60,53,48); doc.setFontSize(9); doc.setFont('helvetica','normal');
+      doc.text(s.label,22,y);
+      doc.text(`Rs. ${s.finalPrice.toLocaleString('en-IN')}`,pageW-20,y,{align:'right'});
+      doc.setDrawColor(200,195,190); doc.setLineDashPattern([1,1],0);
+      doc.line(22,y+1.5,pageW-22,y+1.5);
+      y+=7;
+    });
+    doc.setDrawColor(26,22,18); doc.setLineDashPattern([],0); doc.line(14,y,pageW-14,y);
+    y+=4;
+    doc.setFontSize(9); doc.setFont('helvetica','bold'); doc.setTextColor(26,22,18);
+    doc.text('Subtotal',22,y);
+    doc.text(`Rs. ${ev.eventTotal.toLocaleString('en-IN')}`,pageW-20,y,{align:'right'});
+    y+=12;
+  });
+
+  if(y>240){doc.addPage();y=20;}
+  doc.setFillColor(26,22,18); doc.rect(14,y,pageW-28,16,'F');
+  doc.setTextColor(201,168,76); doc.setFontSize(12); doc.setFont('helvetica','bold');
+  doc.text('GRAND TOTAL',22,y+10);
+  doc.text(`Rs. ${totalCost.toLocaleString('en-IN')}`,pageW-22,y+10,{align:'right'});
+  y+=28;
+  doc.setFontSize(8); doc.setFont('helvetica','normal'); doc.setTextColor(150,140,130);
+  doc.text('Thank you! This quotation is valid for 30 days.',pageW/2,y,{align:'center'});
+
+  doc.save(`LensQuote-${quotationId}.pdf`);
+}
+
+// ── WhatsApp ────────────────────────────────────────────────
+function sendWhatsApp() {
+  if (!currentQuotationData) return;
+  const { clientName, mobile, location, breakdown, totalCost, quotationId } = currentQuotationData;
+  const summary = breakdown.map(ev=>
+    `📅 *${ev.name}* — ${formatDate(ev.date)} ${formatTime(ev.time)}\n` +
+    ev.servicesBreakdown.map(s=>`   • ${s.label}: ₹${s.finalPrice.toLocaleString('en-IN')}`).join('\n') +
+    `\n   Subtotal: ₹${ev.eventTotal.toLocaleString('en-IN')}`
+  ).join('\n\n');
+
+  const msg = `🎊 *Photography Quotation*\nRef: ${quotationId}\n\n👤 *Client:* ${clientName}\n📍 *Location:* ${location}\n\n${summary}\n\n💰 *Grand Total: ₹${totalCost.toLocaleString('en-IN')}*\n\n_Quoted via LensQuote. Valid for 30 days._`;
+  const encoded = encodeURIComponent(msg);
+
+  const clientNum = mobile.replace(/\D/g,'');
+  const clientPhone = clientNum.length===10 ? `91${clientNum}` : clientNum;
+  window.open(`https://wa.me/${clientPhone}?text=${encoded}`,'_blank');
+  setTimeout(()=>window.open(`https://wa.me/${ADMIN_PHONE}?text=${encoded}`,'_blank'),1200);
+}
+
+function resetForm() {
+  document.getElementById('client-name').value='';
+  document.getElementById('client-mobile').value='';
+  document.getElementById('client-location').value='';
+  document.getElementById('events-list').innerHTML='';
+  eventCount=0; addEvent();
+  document.getElementById('quotation-section').classList.add('hidden');
+  document.getElementById('form-section').scrollIntoView({behavior:'smooth'});
+  ['step1','step2','step3'].forEach((s,i)=>{
+    const el=document.getElementById(s);
+    el.className='step'+(i===0?' active':'');
+  });
+  currentQuotationData=null;
+}
+
+// ── Admin Login ─────────────────────────────────────────────
+async function adminLogin() {
+  const username = document.getElementById('admin-user').value.trim();
+  const password = document.getElementById('admin-pass').value;
+  const btn = document.getElementById('login-btn');
+  if (!username||!password){showAlert('login-alert','Enter username and password.','error');return;}
+  btn.innerHTML='<span class="spinner"></span> Signing in...'; btn.disabled=true;
+  try {
+    const res = await api('/api/admin/login',{method:'POST',body:JSON.stringify({username,password})});
+    const data = await res.json();
+    if (res.ok) {
+      adminToken=data.token; localStorage.setItem('adminToken',adminToken);
+      showView('admin'); loadAdminPrices(); loadQuotations();
+    } else { showAlert('login-alert',data.error||'Invalid credentials.','error'); }
+  } catch(e){ showAlert('login-alert','Cannot reach server. Check API URL.','error'); }
+  finally { btn.innerHTML='Sign In →'; btn.disabled=false; }
+}
+
+async function adminLogout() {
+  try { await api('/api/admin/logout',{method:'POST'}); } catch(e){}
+  adminToken=null; localStorage.removeItem('adminToken'); showView('admin-login');
+}
+
+// ── Admin Prices ────────────────────────────────────────────
+async function loadAdminPrices() {
+  try {
+    const res = await api('/api/admin/prices');
+    if(res.status===401){adminLogout();return;}
+    const data = await res.json();
+    const grid = document.getElementById('price-grid');
+    grid.innerHTML = Object.entries(SERVICE_LABELS).map(([key,label])=>`
+      <div class="price-item">
+        <label for="price-${key}">${label}</label>
+        <input type="number" id="price-${key}" value="${data[key]||0}" min="0" step="100" oninput="updatePreview(this)" />
+        <p class="price-note" id="note-${key}">Client price: ₹${((data[key]||0)*2).toLocaleString('en-IN')} (after markup)</p>
+      </div>`).join('');
+  } catch(e){ console.error(e); }
+}
+
+function updatePreview(input) {
+  const key = input.id.replace('price-','');
+  document.getElementById(`note-${key}`).textContent =
+    `Client price: ₹${(parseFloat(input.value||0)*2).toLocaleString('en-IN')} (after markup)`;
+}
+
+async function savePrices() {
+  const btn = document.getElementById('save-prices-btn');
+  const data = {};
+  Object.keys(SERVICE_LABELS).forEach(k=>{ const el=document.getElementById(`price-${k}`); if(el) data[k]=parseFloat(el.value)||0; });
+  btn.innerHTML='<span class="spinner" style="border-top-color:var(--dark)"></span>'; btn.disabled=true;
+  try {
+    const res = await api('/api/admin/prices',{method:'PUT',body:JSON.stringify(data)});
+    if(res.ok){ showAlert('prices-alert','Prices updated!','success'); await loadPrices(); }
+    else { showAlert('prices-alert','Failed to save.','error'); }
+  } catch(e){ showAlert('prices-alert','Server error.','error'); }
+  finally { btn.innerHTML='Save Prices'; btn.disabled=false; }
+}
+
+// ── Admin Quotations ────────────────────────────────────────
+async function loadQuotations() {
+  const tbody = document.getElementById('quotations-tbody');
+  tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted" style="padding:28px;">Loading...</td></tr>';
+  try {
+    const res = await api('/api/admin/quotations');
+    if(res.status===401){adminLogout();return;}
+    const data = await res.json();
+    if(!data.length){
+      tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted" style="padding:28px;">No quotations yet.</td></tr>';
+      return;
+    }
+    tbody.innerHTML=data.map(q=>`
+      <tr>
+        <td><span class="badge">${q.id}</span></td>
+        <td><strong>${q.client_name}</strong></td>
+        <td>${q.mobile}</td>
+        <td>${q.location}</td>
+        <td>${q.events.length} event${q.events.length>1?'s':''}</td>
+        <td><strong>₹${parseFloat(q.total_cost).toLocaleString('en-IN')}</strong></td>
+        <td style="color:var(--muted);font-size:.82rem;">${formatDateTime(q.created_at)}</td>
+      </tr>`).join('');
+  } catch(e){
+    tbody.innerHTML='<tr><td colspan="7" class="text-center text-muted" style="padding:28px;">Error loading.</td></tr>';
+  }
+}
+
+function adminTab(tab,btn) {
+  document.querySelectorAll('.admin-tab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  ['prices','quotations'].forEach(t=>document.getElementById(`admin-tab-${t}`).classList.add('hidden'));
+  document.getElementById(`admin-tab-${tab}`).classList.remove('hidden');
+  if(tab==='quotations') loadQuotations();
+}
+
+// ── Helpers ─────────────────────────────────────────────────
+function formatDate(d){ if(!d)return''; const dt=new Date(d+'T00:00:00'); return dt.toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
+function formatTime(t){ if(!t)return''; const[h,m]=t.split(':'); const hr=parseInt(h); return `${hr%12||12}:${m} ${hr>=12?'PM':'AM'}`; }
+function formatDateTime(s){ return new Date(s).toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
+function showAlert(id,msg,type){ const el=document.getElementById(id); el.className=`alert alert-${type}`; el.textContent=msg; el.classList.remove('hidden'); setTimeout(()=>el.classList.add('hidden'),5000); }
+function hideAlert(id){ document.getElementById(id).classList.add('hidden'); }
+
+init();
+</script>
+</body>
+</html>
